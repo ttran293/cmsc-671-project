@@ -12,7 +12,7 @@ print("="*60)
 load_dotenv()
 hf_token = os.getenv('HUGGINGFACE_TOKEN')
 
-model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
+model_name = "meta-llama/Llama-3.1-8B-Instruct"
 
 print(f"\n[1/6] Loading dataset...")
 dataset = load_dataset("json", data_files="summarized_dataset/train.jsonl")["train"]
