@@ -28,3 +28,9 @@ module load Python/3.11.5-GCCcore-13.2.0
 #activate py env
 source venv311/bin/activate
 
+#store cache fix OSError: [Errno 28] No space left on device
+#run this in gpu shell before run python
+export HF_HOME=/umbc/rs/pi_cmat/users/ttran19/.cache/huggingface
+export HF_HUB_CACHE=$HF_HOME/hub
+export HF_DATASETS_CACHE=$HF_HOME/datasets
+export TRANSFORMERS_CACHE=$HF_HOME/hub

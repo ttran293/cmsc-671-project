@@ -49,7 +49,6 @@ training_args = SFTConfig(
     gradient_accumulation_steps=8,
     num_train_epochs=3,
     learning_rate=2e-4,
-    max_seq_length=1024,
     logging_steps=1,
     save_steps=10,
 )
@@ -63,6 +62,7 @@ trainer = SFTTrainer(
     train_dataset=dataset,
     tokenizer=tokenizer,
     formatting_func=format_example,
+    max_seq_length=1024,
 )
 
 print(f"\n[6/6] Starting training...")
