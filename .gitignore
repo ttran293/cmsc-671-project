@@ -26,3 +26,7 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Training outputs
+llama3-lora/
+prompt_lora_scripts/llama3-lora/
+
