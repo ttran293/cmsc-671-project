@@ -51,7 +51,6 @@ training_args = SFTConfig(
     learning_rate=2e-4,
     logging_steps=1,
     save_steps=10,
-    max_seq_length=1024,
 )
 
 def format_example(example):
