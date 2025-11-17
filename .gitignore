@@ -11,6 +11,9 @@ build/
 dist/
 *.egg-info/
 
+# Environment variables
+.env
+
 # IDE
 .vscode/
 .idea/
