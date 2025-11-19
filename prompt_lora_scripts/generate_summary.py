@@ -7,6 +7,11 @@ warnings.filterwarnings('ignore')
 
 from dotenv import load_dotenv
 from langchain_community.llms import DeepInfra
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import pipeline
+
+analyzer = SentimentIntensityAnalyzer()
 
 fpb_df = pd.read_csv('../clean_dataset/FinancialPhraseBank_train.csv', encoding='utf-8')
 imdb_df = pd.read_csv('../clean_dataset/IMDB_train.csv', encoding='utf-8')
@@ -15,7 +20,9 @@ mdr_df = pd.read_csv('../clean_dataset/MDR_train.csv', encoding='utf-8')
 load_dotenv()
 os.environ["DEEPINFRA_API_TOKEN"] = os.getenv('DEEPINFRA_API_TOKEN')
 
-llm = DeepInfra(model_id="meta-llama/Meta-Llama-3-8B-Instruct")
+llm = DeepInfra(model_id="meta-llama/Meta-Llama-3.1-8B-Instruct")
+model = "siebert/sentiment-roberta-large-english"
+classifier = pipeline("sentiment-analysis", model=model, truncation=True, max_length=512)
 
 def estimate_tokens(text):
     words = len(text.split())
@@ -28,10 +35,10 @@ def get_preserve_prompt(sentence):
 
     Requirements:
     - Keep all important information and details in the summary.
-    - Preserve the sentiment of the original text.
+    - Summarize the following sentence while preserving its original tone, wording style, and sentiment.
 
     Respond with this exact JSON structure:
-    {{"result": "your summary here", "explanation": "how you derived it", "mode": "preserve"}}"""
+    {{"result": "your summary here"}}"""
     return prompt
 
 def get_no_preserve_prompt(sentence):
@@ -41,10 +48,10 @@ def get_no_preserve_prompt(sentence):
 
     Requirements:
     - Keep all important information and details in the summary.
-    - Do not preserve the sentiment of the original text.
+    - Summarize the following sentence to a neutral tone.
 
     Respond with this exact JSON structure:
-    {{"result": "your summary here", "explanation": "how you derived it", "mode": "neutral"}}"""
+    {{"result": "your summary here"}}"""
     return prompt
 
 def get_summary_prompt(sentence):
@@ -56,22 +63,98 @@ def get_summary_prompt(sentence):
     - Keep all important information and details in the summary.
 
     Respond with this exact JSON structure:
-    {{"result": "your summary here", "explanation": "how you derived it", "mode": "unspecified"}}"""
+    {{"result": "your summary here"}}"""
     return prompt
 
-def generate_summary(df, mode_label, domain_name):
+def get_vader_sentiment(sentence):
+    scores = analyzer.polarity_scores(sentence)
+    compound = scores["compound"]
+    if compound >= 0.05:
+        label = "positive"
+    elif compound <= -0.05:
+        label = "negative"
+    else:
+        label = "neutral"
+    return label, compound
+
+def get_roberta_sentiment(sentence):
+    result = classifier(sentence)
+    return result[0]['label'], result[0]['score']
+
+def decide_mode(sentence):
+    _, score = get_roberta_sentiment(sentence)
+    if score >= 0.7:
+        return "preserve"
+    return "neutral"
+
+
+def validate_summary(mode, orig_label, orig_score, sum_label, sum_score, sum_vader_label, sum_vader_score):
+    if mode == "neutral":
+        if sum_label in ("NEUTRAL") or sum_vader_label in ("neutral"):
+            return True
+        return False
+
+    if mode == "preserve":
+        if orig_label in ("POSITIVE", "NEGATIVE"):
+            if sum_label != orig_label:
+                return False
+            if sum_score < 0.5:
+                return False
+        return True
+
+    return True
+
+def extract_result_from_raw(raw, fallback):
+    raw_clean = str(raw).strip()
+
+    raw_no_fence = re.sub(r"```.*?```", "", raw_clean, flags=re.DOTALL)
+
+    try:
+        data = json.loads(raw_no_fence)
+        if isinstance(data, dict) and "result" in data:
+            return str(data["result"]).strip()
+    except Exception:
+        pass
+
+    candidate_objs = re.findall(r'\{[^{}]*"result"[^{}]*\}', raw_no_fence, flags=re.DOTALL)
+
+    last_good = None
+    for obj in candidate_objs:
+        try:
+            data = json.loads(obj)
+            if isinstance(data, dict) and "result" in data:
+                last_good = str(data["result"]).strip()
+        except Exception:
+            continue
+
+    if last_good is not None:
+        return last_good
+
+    m = re.findall(r'"result"\s*:\s*"([^"]+)"', raw_no_fence)
+    if m:
+        return m[-1].strip()
+
+    return fallback
+
+
+def generate_summary(df, mode_label):
     results = []
     for idx, row in df.iterrows():
         sentence = row['sentence']
 
-        if mode_label == 'preserve':
+        if mode_label == 'auto':
+            effective_mode = decide_mode(sentence)
+        else:
+            effective_mode = mode_label
+
+        if effective_mode == 'preserve':
             prompt = get_preserve_prompt(sentence)
-        elif mode_label == 'neutral':
+        elif effective_mode == 'neutral':
             prompt = get_no_preserve_prompt(sentence)
         else:
             prompt = get_summary_prompt(sentence)
 
-        max_tokens = estimate_tokens(sentence) * 2 + 100
+        max_tokens = estimate_tokens(sentence) * 3 + 200
 
         llm.model_kwargs = {
             "temperature": 0.2,
@@ -79,59 +162,55 @@ def generate_summary(df, mode_label, domain_name):
             "max_new_tokens": max_tokens,
             "top_p": 0.9,
         }
-
+        # print("\n\n\n--------------------------------")
+        # print("Prompt:")
+        # print(prompt)
+        # print("\n\n\n--------------------------------")
         raw = llm.invoke(prompt)
+        # print("\n\n\n--------------------------------")
+        # print(raw)
+        # print("\n\n\n--------------------------------")
         raw_clean = str(raw).strip()
+        summarized_text = extract_result_from_raw(raw_clean, sentence)
 
-        try:
-            data = json.loads(raw_clean)
-        except json.JSONDecodeError:
-            data = None
-            match = re.search(r'\{.*\}', raw_clean, re.DOTALL)
-            if match:
-                try:
-                    data = json.loads(match.group(0))
-                except json.JSONDecodeError:
-                    data = None
-            if data is None:
-                result_match = re.search(r'["\']?result["\']?\s*[:=]\s*["\']([^"\']+)["\']', raw_clean, re.IGNORECASE)
-                summarized_text = result_match.group(1).strip() if result_match else sentence
-                explanation = ""
-                mode_from_model = mode_label
-            else:
-                summarized_text = data.get("result", sentence).strip()
-                explanation = data.get("explanation", "").strip()
-                mode_from_model = data.get("mode", mode_label).strip()
-        else:
-            summarized_text = data.get("result", sentence).strip()
-            explanation = data.get("explanation", "").strip()
-            mode_from_model = data.get("mode", mode_label).strip()
+    
 
+        original_sentiment, original_score = get_roberta_sentiment(sentence)
+        summarized_roberta_sentiment, summarized_roberta_score = get_roberta_sentiment(summarized_text)
+        original_vader_sentiment, original_vader_score = get_vader_sentiment(sentence)
+        summarized_vader_sentiment, summarized_vader_score = get_vader_sentiment(summarized_text)
+        is_valid = validate_summary(effective_mode, original_sentiment, original_score, summarized_roberta_sentiment, summarized_roberta_score, summarized_vader_sentiment, summarized_vader_score)
         results.append({
             'original_text': sentence,
+            'vader_original_sentiment': original_vader_sentiment,
+            'vader_original_score': original_vader_score,
+            'roberta_original_sentiment': original_sentiment,
+            'roberta_original_score': original_score,
             'summarized_text': summarized_text,
-            'mode': mode_from_model,
-            'intended_mode': mode_label,
-            'domain': domain_name,
-            'explanation': explanation,
+            'vader_summarized_sentiment': summarized_vader_sentiment,
+            'vader_summarized_score': summarized_vader_score,
+            'roberta_summarized_sentiment': summarized_roberta_sentiment,
+            'roberta_summarized_score': summarized_roberta_score,
+            'mode_used': effective_mode,
+            'is_valid': is_valid,
         })
 
     return results
 
 if __name__ == "__main__":
-    fpb_df = fpb_df.head(1)
-    imdb_df = imdb_df.head(1)
-    mdr_df = mdr_df.head(1)
+    fpb_df = fpb_df.head(5)
+    imdb_df = imdb_df.head(5)
+    mdr_df = mdr_df.head(5)
 
     all_results = []
 
-    fpb_results = generate_summary(fpb_df, 'neutral', 'financial_phrasebank')
+    fpb_results = generate_summary(fpb_df, 'neutral')
     all_results.extend(fpb_results)
 
-    imdb_results = generate_summary(imdb_df, 'unspecified', 'imdb')
+    imdb_results = generate_summary(imdb_df, 'auto')
     all_results.extend(imdb_results)
 
-    mdr_results = generate_summary(mdr_df, 'preserve', 'mdr')
+    mdr_results = generate_summary(mdr_df, 'preserve')
     all_results.extend(mdr_results)
 
     result_df = pd.DataFrame(all_results)

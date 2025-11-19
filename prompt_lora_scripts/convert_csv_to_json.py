@@ -7,14 +7,8 @@ records = []
 for _, row in df.iterrows():
     original_text = str(row["original_text"])
     summarized_text = str(row["summarized_text"])
-    mode = str(row.get("intended_mode", "unspecified")).strip().lower()
 
-    if mode == "preserve":
-        instruction = "Summarize the following text while preserving the sentiment."
-    elif mode == "neutral":
-        instruction = "Summarize the following text in a neutral tone, without preserving sentiment."
-    else:
-        instruction = "Summarize the following text."
+    instruction = "Summarize the following text."
 
     if not original_text or not summarized_text:
         continue
