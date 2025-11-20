@@ -18,6 +18,7 @@ train_df = clean_dataframe(train_df)
 train_df = train_df['sentence']
 # validation_df = clean_dataframe(validation_df)
 test_df = clean_dataframe(test_df)
+test_df = test_df['sentence']
 
 dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset')
 os.makedirs(dataset_folder, exist_ok=True)

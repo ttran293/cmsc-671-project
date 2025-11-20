@@ -21,6 +21,7 @@ train_size = int(len(df) * 0.9)
 train_df = df.iloc[:train_size]
 train_df = train_df.rename(columns={'review': 'sentence'})['sentence']
 test_df = df.iloc[train_size:]
+test_df = test_df.rename(columns={'review': 'sentence'})['sentence']
 
 dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset')
 os.makedirs(dataset_folder, exist_ok=True)
