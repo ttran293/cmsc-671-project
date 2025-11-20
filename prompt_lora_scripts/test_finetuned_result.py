@@ -17,6 +17,10 @@ sample_fpb = test_fpb_df.head(1)
 sample_imdb = test_imdb_df.head(1)
 sample_mdr = test_mdr_df.head(1)
 
+print("FPB columns:", test_fpb_df.columns.tolist())
+print("IMDB columns:", test_imdb_df.columns.tolist())
+print("MDR columns:", test_mdr_df.columns.tolist())
+
 def estimate_tokens(text):
     words = len(text.split())
     return int(words * 1.3)
@@ -41,8 +45,11 @@ def generate_summary(text, model_id):
 def process_samples(df, dataset_name, model_id):
     results = []
     for idx, row in df.iterrows():
+        print(f"Processing {dataset_name} - {idx+1}/{len(df)}")
         text = row['sentence']
+        print(f"Text: {text}")
         summary = generate_summary(text, model_id)
+        print(f"Summary: {summary}")
         results.append({
             'dataset': dataset_name,
             'original_text': text,
