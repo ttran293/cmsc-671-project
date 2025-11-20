@@ -27,7 +27,7 @@ dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset')
 os.makedirs(dataset_folder, exist_ok=True)
 
 train_df.to_csv(os.path.join(dataset_folder, 'MDR_train.csv'), index=False, encoding='utf-8-sig')
-# test_df.to_csv(os.path.join(dataset_folder, 'MDR_test.csv'), index=False, encoding='utf-8-sig')
+test_df.to_csv(os.path.join(dataset_folder, 'MDR_test.csv'), index=False, encoding='utf-8-sig')
 
 # print(f"Train set: {len(train_df)} samples (90%)")
 # print(f"Test set: {len(test_df)} samples (10%)")

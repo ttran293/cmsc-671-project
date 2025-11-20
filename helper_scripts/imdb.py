@@ -26,4 +26,4 @@ dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset')
 os.makedirs(dataset_folder, exist_ok=True)
 
 train_df.to_csv(os.path.join(dataset_folder, 'IMDB_train.csv'), index=False)
-# test_df.to_csv(os.path.join(dataset_folder, 'IMDB_test.csv'), index=False)
+test_df.to_csv(os.path.join(dataset_folder, 'IMDB_test.csv'), index=False)

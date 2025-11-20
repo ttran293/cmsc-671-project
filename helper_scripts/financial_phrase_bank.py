@@ -17,11 +17,11 @@ def clean_dataframe(df):
 train_df = clean_dataframe(train_df)
 train_df = train_df['sentence']
 # validation_df = clean_dataframe(validation_df)
-# test_df = clean_dataframe(test_df)
+test_df = clean_dataframe(test_df)
 
 dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset')
 os.makedirs(dataset_folder, exist_ok=True)
 
 train_df.to_csv(os.path.join(dataset_folder, 'FinancialPhraseBank_train.csv'), index=False, encoding='utf-8-sig')
 # validation_df.to_csv(os.path.join(dataset_folder, 'FinancialPhraseBank_validation.csv'), index=False, encoding='utf-8-sig')
-# test_df.to_csv(os.path.join(dataset_folder, 'FinancialPhraseBank_test.csv'), index=False, encoding='utf-8-sig')
+test_df.to_csv(os.path.join(dataset_folder, 'FinancialPhraseBank_test.csv'), index=False, encoding='utf-8-sig')
