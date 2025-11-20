@@ -89,8 +89,6 @@ If you see `version https://git-lfs.github.com/spec/v1`, the files are still poi
 See environment setup. A Huggingface key is required to test this.
 You will also need to request permission to use LLaMA 3.1-8B-Instruct model.
 
-Note: The output is saved in the prompt_lora_scripts\model_comparison_results\model_comparision.csv
-
 Once the key is obtained, simply add it to the .env file. Run the scripts test_finetuned_result.py to test
 
 Compare base model vs fine-tuned model performance:
@@ -123,6 +121,7 @@ Processing MDR - 1/1
 Text: [Mental health post...]
 Summary: [Generated summary]
 ```
+Note: If you don't want to run it, the output is saved in the prompt_lora_scripts\model_comparison_results\model_comparision.csv
 
 ## UMBC HPCF Usage
 
