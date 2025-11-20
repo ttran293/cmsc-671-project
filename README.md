@@ -2,24 +2,6 @@
 
 Deciding when to preserve sentiment during summarization is a challenge with Large Language Models (LLMs). In some domains that have affective data, maintaining sentiment is essential, while in others, a neutral summary is preferred. This study aims to develop a system capable of automatically identifying when sentiment should be preserved and generating summaries accordingly. We explore various transformer-based techniques for sentiment detection that integrate both extractive and generative approaches. We examine multiple datasets across different domains to assess our goal. In addition, we also test our system using different language models with different capability settings. The findings of this study will help to understand the trade-offs in affective summarization and inform best practices for applying summarization systems across diverse tasks.
 
-## Table of Contents
-
-- [CMSC-671 Project](#cmsc-671-project)
-  - [Table of Contents](#table-of-contents)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-    - [Windows](#windows)
-    - [Linux](#linux)
-  - [Environment Setup](#environment-setup)
-  - [Git LFS Setup](#git-lfs-setup)
-  - [Usage](#usage)
-    - [1. How to test: Self-Taught Approach](#1-how-to-test-self-taught-approach)
-  - [UMBC HPCF Usage](#umbc-hpcf-usage)
-    - [Request GPU Node](#request-gpu-node)
-    - [Fix Cache Issues](#fix-cache-issues)
-  - [Datasets](#datasets)
-  - [Acknowledgments](#acknowledgments)
-
 ## Prerequisites
 
 - Python 3.11+
@@ -30,37 +12,6 @@ Deciding when to preserve sentiment during summarization is a challenge with Lar
 - CUDA-capable GPU (recommended for training)
 
 ## Installation
-
-### Windows
-
-1. **Clone the repository:**
-
-```bash
-git clone <your-repo-url>
-cd cmsc-671-project
-```
-
-2. **Create a virtual environment:**
-
-```bash
-python -m venv venv311
-```
-
-3. **Activate the virtual environment:**
-
-```bash
-# Command Prompt
-venv311\Scripts\activate.bat
-
-# PowerShell
-venv311\Scripts\Activate.ps1
-```
-
-4. **Install dependencies:**
-
-```bash
-pip install -r requirements.txt
-```
 
 ### Linux
 
@@ -133,10 +84,12 @@ If you see `version https://git-lfs.github.com/spec/v1`, the files are still poi
 
 ## Usage
 
-### 1. How to test: Self-Taught Approach
+### How to test: Self-Taught Approach
 
 See environment setup. A Huggingface key is required to test this.
 You will also need to request permission to use LLaMA 3.1-8B-Instruct model.
+
+Note: The output is saved in the prompt_lora_scripts\model_comparison_results\model_comparision.csv
 
 Once the key is obtained, simply add it to the .env file. Run the scripts test_finetuned_result.py to test
 
@@ -183,10 +136,19 @@ ssh your_username@chip.rs.umbc.edu
 
 # Request GPU node
 srun --cluster=chip-gpu \
-     --account=pi_cmat \
+     --account=user \
      --time=60 \
      --mem=32000 \
      --gres=gpu:1 \
+     --pty $SHELL
+
+#activate shell cpu
+srun --cluster=chip-cpu \
+     --account=user \
+     --partition=general \
+     --qos=short \
+     --time=00:30:00 \
+     --mem=4000 \
      --pty $SHELL
 
 # Load Python 3.11
