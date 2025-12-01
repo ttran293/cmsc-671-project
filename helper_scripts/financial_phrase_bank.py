@@ -14,15 +14,21 @@ def clean_dataframe(df):
             df[col] = df[col].str.replace('``', "''", regex=False)
     return df
 
-train_df = clean_dataframe(train_df)
-train_df = train_df['sentence']
-# validation_df = clean_dataframe(validation_df)
-test_df = clean_dataframe(test_df)
-test_df = test_df['sentence']
+combined_df = pd.concat([train_df, validation_df, test_df], ignore_index=True)
+combined_df = clean_dataframe(combined_df)
 
-dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset')
+sampled_df = combined_df.sample(n=3300, random_state=42).reset_index(drop=True)
+
+sampled_df = sampled_df[['sentence']]
+
+train_df = sampled_df.iloc[:3000]
+test_df = sampled_df.iloc[3000:]
+
+print(f"Train set: {len(train_df)} samples")
+print(f"Test set: {len(test_df)} samples")
+
+dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset', 'FinancialPhraseBank')
 os.makedirs(dataset_folder, exist_ok=True)
 
 train_df.to_csv(os.path.join(dataset_folder, 'FinancialPhraseBank_train.csv'), index=False, encoding='utf-8-sig')
-# validation_df.to_csv(os.path.join(dataset_folder, 'FinancialPhraseBank_validation.csv'), index=False, encoding='utf-8-sig')
 test_df.to_csv(os.path.join(dataset_folder, 'FinancialPhraseBank_test.csv'), index=False, encoding='utf-8-sig')

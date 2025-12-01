@@ -17,13 +17,17 @@ def clean_dataframe(df):
 
 df = clean_dataframe(df)
 
-train_size = int(len(df) * 0.9)
-train_df = df.iloc[:train_size]
-train_df = train_df.rename(columns={'review': 'sentence'})['sentence']
-test_df = df.iloc[train_size:]
-test_df = test_df.rename(columns={'review': 'sentence'})['sentence']
+sampled_df = df.sample(n=3300, random_state=42).reset_index(drop=True)
 
-dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset')
+sampled_df = sampled_df.rename(columns={'review': 'sentence'})
+
+train_df = sampled_df.iloc[:3000][['sentence']]
+test_df = sampled_df.iloc[3000:][['sentence']]
+
+print(f"Train set: {len(train_df)} samples")
+print(f"Test set: {len(test_df)} samples")
+
+dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset', 'IMDB')
 os.makedirs(dataset_folder, exist_ok=True)
 
 train_df.to_csv(os.path.join(dataset_folder, 'IMDB_train.csv'), index=False)

@@ -18,17 +18,16 @@ df = clean_dataframe(df)
 
 df = df.rename(columns={'selftext': 'sentence'})
 
-print(df.head())
-train_size = int(len(df) * 0.9)
-train_df = df.iloc[:train_size][['sentence']]
-test_df = df.iloc[train_size:][['sentence']]
+sampled_df = df.sample(n=3300, random_state=42).reset_index(drop=True)
 
-dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset')
+train_df = sampled_df.iloc[:3000][['sentence']]
+test_df = sampled_df.iloc[3000:][['sentence']]
+
+print(f"Train set: {len(train_df)} samples")
+print(f"Test set: {len(test_df)} samples")
+
+dataset_folder = os.path.join(os.path.dirname(__file__), '..', 'clean_dataset', 'MDR')
 os.makedirs(dataset_folder, exist_ok=True)
 
 train_df.to_csv(os.path.join(dataset_folder, 'MDR_train.csv'), index=False, encoding='utf-8-sig')
 test_df.to_csv(os.path.join(dataset_folder, 'MDR_test.csv'), index=False, encoding='utf-8-sig')
-
-# print(f"Train set: {len(train_df)} samples (90%)")
-# print(f"Test set: {len(test_df)} samples (10%)")
-# print(f"Saved to clean_dataset/")
